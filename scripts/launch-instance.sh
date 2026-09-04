@@ -179,7 +179,7 @@ build_launch_command() {
         "--availability-domain" "$ad_name"
         "--compartment-id" "$comp_id"
         "--shape" "$OCI_SHAPE"
-        "--subnet-id" "$OCI_SUBNET_ID"
+        "--subnet-id" "$(trim_whitespace "$OCI_SUBNET_ID")"
         "--image-id" "$image_id"
         "--display-name" "$INSTANCE_DISPLAY_NAME"
         "--assign-private-dns-record" "true"

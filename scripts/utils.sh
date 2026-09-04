@@ -857,6 +857,18 @@ parse_and_configure_proxy() {
     log_success "Proxy configuration applied successfully"
 }
 
+# Strip leading/trailing whitespace (spaces, tabs, newlines) - defends against
+# stray characters from copy-pasting single-line GitHub Secret values (OCIDs,
+# fingerprints, region names), which otherwise surface as confusing downstream
+# errors (invalid OCID format, "Invalid endpoint host", etc.) instead of a
+# clear "this secret has extra whitespace" message.
+trim_whitespace() {
+    local var="$1"
+    var="${var#"${var%%[![:space:]]*}"}"
+    var="${var%"${var##*[![:space:]]}"}"
+    printf '%s' "$var"
+}
+
 # Validate OCID format
 is_valid_ocid() {
     local ocid="$1"
