@@ -227,21 +227,34 @@ oci_cmd_data() {
     local cmd=("$@")
     local output
     local status
-    
+    local stderr_file
+
     log_debug "Executing OCI data command: oci ${cmd[*]}"
-    
+
+    # Capture stdout and stderr separately: merging them (2>&1) would leak OCI
+    # CLI's informational stderr warnings (e.g. its pagination notice on a
+    # --limit query) into stdout - which callers use verbatim as a --raw-output
+    # value (e.g. an image OCID), silently corrupting it even on success.
+    umask 077
+    stderr_file=$(mktemp)
+
     set +e
-    output=$(oci --no-retry --connection-timeout $OCI_CONNECTION_TIMEOUT_SECONDS --read-timeout $OCI_READ_TIMEOUT_SECONDS "${cmd[@]}" 2>&1)
+    output=$(oci --no-retry --connection-timeout $OCI_CONNECTION_TIMEOUT_SECONDS --read-timeout $OCI_READ_TIMEOUT_SECONDS "${cmd[@]}" 2>"$stderr_file")
     status=$?
     set -e
-    
+
     if [[ $status -ne 0 ]]; then
         log_error "OCI data command failed with status $status"
         log_error "Command: ${cmd[*]}"
         log_error "Output: $output"
+        local stderr_output
+        stderr_output=$(cat "$stderr_file" 2>/dev/null || true)
+        [[ -n "$stderr_output" ]] && log_error "Stderr: $stderr_output"
+        rm -f "$stderr_file"
         return $status
     fi
-    
+
+    rm -f "$stderr_file"
     echo "$output"
 }
 
