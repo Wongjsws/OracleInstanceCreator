@@ -403,7 +403,7 @@ launch_instance() {
                 # Try next AD if available
                 if [[ $((ad_index + 1)) -lt $max_attempts ]]; then
                     log_info "Trying next availability domain..."
-                    ((ad_index++))
+                    ad_index=$((ad_index + 1))
                     continue
                 else
                     log_performance_metric "AD_CYCLE_COMPLETE" "ALL_ADS" "$max_attempts" "$max_attempts" "CAPACITY_EXHAUSTED"
@@ -436,7 +436,7 @@ launch_instance() {
                 # Try next AD if available
                 if [[ $((ad_index + 1)) -lt $max_attempts ]]; then
                     log_info "Trying next availability domain after LimitExceeded..."
-                    ((ad_index++))
+                    ad_index=$((ad_index + 1))
                     continue
                 else
                     log_info "All ADs exhausted after LimitExceeded errors"
@@ -449,7 +449,7 @@ launch_instance() {
                 local should_retry_same_ad=true
                 
                 while [[ $should_retry_same_ad == true && $retry_count -lt $transient_retry_max ]]; do
-                    ((retry_count++))
+                    retry_count=$((retry_count + 1))
                     
                     # Calculate exponential backoff delay for this attempt
                     local backoff_delay
@@ -526,7 +526,7 @@ launch_instance() {
                 if [[ "$error_type" == "INTERNAL_ERROR" || "$error_type" == "NETWORK" ]]; then
                     if [[ $((ad_index + 1)) -lt $max_attempts ]]; then
                         log_info "All retries exhausted for $current_ad - trying next availability domain..."
-                        ((ad_index++))
+                        ad_index=$((ad_index + 1))
                         continue
                     else
                         # All ADs attempted with transient errors - treat as temporary capacity issue
@@ -539,7 +539,7 @@ launch_instance() {
                         "CAPACITY")
                             if [[ $((ad_index + 1)) -lt $max_attempts ]]; then
                                 log_info "Trying next availability domain after capacity error during retry..."
-                                ((ad_index++))
+                                ad_index=$((ad_index + 1))
                                 continue
                             else
                                 log_info "All ADs exhausted - will retry on next schedule"
@@ -587,7 +587,7 @@ launch_instance() {
             fi
         fi
         
-        ((ad_index++))
+        ad_index=$((ad_index + 1))
     done
     
     # Should not reach here, but handle gracefully

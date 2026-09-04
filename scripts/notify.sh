@@ -40,7 +40,7 @@ else
             
             echo "[DEBUG] Retry attempt $attempt failed, waiting ${delay}s..." >&2
             sleep "$delay"
-            ((attempt++))
+            attempt=$((attempt + 1))
             delay=$((delay * 2))  # Exponential backoff
         done
         return 1

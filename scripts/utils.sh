@@ -274,10 +274,10 @@ redact_sensitive_params() {
         # Check if this is a parameter that might contain sensitive data
         if [[ "$param" == "--auth" || "$param" == "--private-key" || "$param" == "--key-file" ]]; then
             redacted_cmd+=("$param")
-            ((i++))
+            i=$((i + 1))
             if [[ $i -lt ${#cmd[@]} ]]; then
                 redacted_cmd+=("[REDACTED]")
-                ((i++))
+                i=$((i + 1))
             fi
         elif [[ "$param" =~ ^ocid1\. ]]; then
             # Redact OCIDs by showing only first and last 4 characters
@@ -288,24 +288,24 @@ redact_sensitive_params() {
             else
                 redacted_cmd+=("[REDACTED]")
             fi
-            ((i++))
+            i=$((i + 1))
         elif [[ "$param" =~ (BEGIN|END).*PRIVATE.*KEY ]]; then
             # Redact private key content
             redacted_cmd+=("[PRIVATE_KEY_REDACTED]")
-            ((i++))
+            i=$((i + 1))
         elif [[ "$param" =~ .*@.*:.* ]]; then
             # Mask proxy URLs or credentials in the format user:pass@host:port
             local masked_param
             masked_param=$(mask_credentials "$param")
             redacted_cmd+=("$masked_param")
-            ((i++))
+            i=$((i + 1))
         elif [[ "$param" =~ --metadata.*ssh-authorized-keys || "$param" =~ ssh-rsa || "$param" =~ ssh-ed25519 ]]; then
             # Redact SSH keys
             redacted_cmd+=("[SSH_KEY_REDACTED]")
-            ((i++))
+            i=$((i + 1))
         else
             redacted_cmd+=("$param")
-            ((i++))
+            i=$((i + 1))
         fi
     done
     
@@ -597,7 +597,7 @@ retry_with_backoff() {
             delay=$((delay * 2))  # Exponential backoff
         fi
         
-        ((attempt++))
+        attempt=$((attempt + 1))
     done
     
     log_error "Command failed after $max_attempts attempts"

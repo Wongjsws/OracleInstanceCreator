@@ -19,7 +19,11 @@ echo ""
 # Increment error counter and log error
 validation_error() {
     local message="$1"
-    ((VALIDATION_ERRORS++))
+    # Use arithmetic expansion, not the ((...)) command: post-increment evaluates
+    # to the pre-increment value, so ((VALIDATION_ERRORS++)) exits 1 (bash's
+    # "false") on the very first call when VALIDATION_ERRORS goes 0->1 - which
+    # kills the script right here under set -e, before log_error even runs.
+    VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
     log_error "✗ $message"
 }
 

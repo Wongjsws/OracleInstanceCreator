@@ -224,33 +224,33 @@ validate_constants() {
     # Basic sanity checks
     if [[ "$GITHUB_ACTIONS_BILLING_TIMEOUT" -ge "$GITHUB_ACTIONS_BILLING_BOUNDARY" ]]; then
         echo "ERROR: GITHUB_ACTIONS_BILLING_TIMEOUT ($GITHUB_ACTIONS_BILLING_TIMEOUT) must be less than boundary ($GITHUB_ACTIONS_BILLING_BOUNDARY)" >&2
-        ((errors++))
+        errors=$((errors + 1))
     fi
     
     if [[ "$OCI_CONNECTION_TIMEOUT_SECONDS" -ge "$OCI_READ_TIMEOUT_SECONDS" ]]; then
         echo "ERROR: OCI_CONNECTION_TIMEOUT_SECONDS should be less than OCI_READ_TIMEOUT_SECONDS" >&2
-        ((errors++))
+        errors=$((errors + 1))
     fi
     
     if [[ "$BOOT_VOLUME_SIZE_MIN" -lt 50 ]]; then
         echo "ERROR: BOOT_VOLUME_SIZE_MIN ($BOOT_VOLUME_SIZE_MIN) cannot be less than Oracle's minimum (50GB)" >&2
-        ((errors++))
+        errors=$((errors + 1))
     fi
     
     # Cache configuration validation
     if [[ "$CACHE_TTL_HOURS_MIN" -lt 1 ]]; then
         echo "ERROR: CACHE_TTL_HOURS_MIN ($CACHE_TTL_HOURS_MIN) must be at least 1 hour" >&2
-        ((errors++))
+        errors=$((errors + 1))
     fi
     
     if [[ "$CACHE_TTL_HOURS_MAX" -gt 168 ]]; then
         echo "ERROR: CACHE_TTL_HOURS_MAX ($CACHE_TTL_HOURS_MAX) cannot exceed GitHub Actions cache limit (168 hours)" >&2
-        ((errors++))
+        errors=$((errors + 1))
     fi
     
     if [[ "$CACHE_TTL_HOURS_DEFAULT" -lt "$CACHE_TTL_HOURS_MIN" ]] || [[ "$CACHE_TTL_HOURS_DEFAULT" -gt "$CACHE_TTL_HOURS_MAX" ]]; then
         echo "ERROR: CACHE_TTL_HOURS_DEFAULT ($CACHE_TTL_HOURS_DEFAULT) must be between $CACHE_TTL_HOURS_MIN and $CACHE_TTL_HOURS_MAX" >&2
-        ((errors++))
+        errors=$((errors + 1))
     fi
     
     return $errors
