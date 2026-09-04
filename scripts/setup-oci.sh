@@ -21,12 +21,22 @@ setup_oci_config() {
     mkdir -p ~/.oci
     
     # Create OCI config file
+    # Trim stray whitespace/newlines from copy-pasted secret values: a trailing
+    # space or newline on any of these turns into a hard-to-diagnose error deep
+    # in the OCI SDK (e.g. region -> "Invalid endpoint host") instead of a clear
+    # validation message.
+    local user_ocid fingerprint tenancy_ocid region
+    user_ocid=$(trim_whitespace "$OCI_USER_OCID")
+    fingerprint=$(trim_whitespace "$OCI_KEY_FINGERPRINT")
+    tenancy_ocid=$(trim_whitespace "$OCI_TENANCY_OCID")
+    region=$(trim_whitespace "$OCI_REGION")
+
     cat > ~/.oci/config <<EOL
 [DEFAULT]
-user=${OCI_USER_OCID}
-fingerprint=${OCI_KEY_FINGERPRINT}
-tenancy=${OCI_TENANCY_OCID}
-region=${OCI_REGION}
+user=${user_ocid}
+fingerprint=${fingerprint}
+tenancy=${tenancy_ocid}
+region=${region}
 key_file=${HOME}/.oci/oci_api_key.pem
 EOL
     

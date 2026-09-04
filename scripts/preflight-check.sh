@@ -19,7 +19,11 @@ echo ""
 # Increment error counter and log error
 validation_error() {
     local message="$1"
-    ((VALIDATION_ERRORS++))
+    # Use arithmetic expansion, not the ((...)) command: post-increment evaluates
+    # to the pre-increment value, so ((VALIDATION_ERRORS++)) exits 1 (bash's
+    # "false") on the very first call when VALIDATION_ERRORS goes 0->1 - which
+    # kills the script right here under set -e, before log_error even runs.
+    VALIDATION_ERRORS=$((VALIDATION_ERRORS + 1))
     log_error "✗ $message"
 }
 
@@ -78,6 +82,24 @@ check_required_var "OCI_KEY_FINGERPRINT" "OCI Key Fingerprint"
 check_required_var "OCI_TENANCY_OCID" "OCI Tenancy OCID"
 check_required_var "OCI_REGION" "OCI Region"
 check_required_var "OCI_PRIVATE_KEY" "OCI Private Key"
+
+# Region identifiers must be a valid API endpoint hostname component (the OCI
+# SDK builds URLs like https://iaas.<region>.oraclecloud.com from this value).
+# A trimmed value can still fail this if it contains a look-alike Unicode
+# character (e.g. a non-breaking hyphen U+2011 instead of ASCII '-') picked up
+# from a copy-paste - which is otherwise invisible and produces a cryptic
+# "Invalid endpoint host" error deep in the OCI SDK instead of a clear one here.
+if [[ -n "${OCI_REGION:-}" ]]; then
+    region_trimmed=$(trim_whitespace "$OCI_REGION")
+    if [[ "$region_trimmed" =~ ^[a-z0-9-]+$ ]]; then
+        validation_success "OCI Region format: '$region_trimmed' contains only valid hostname characters"
+    else
+        validation_error "OCI Region '$region_trimmed' contains a character invalid in an API hostname (only a-z, 0-9, '-' allowed)"
+        region_hex=$(printf '%s' "$region_trimmed" | od -An -tx1 | tr -s ' ')
+        log_error "  Raw bytes (hex): $region_hex"
+        log_error "  Common cause: a Unicode look-alike character (e.g. non-breaking hyphen U+2011) from copy-pasting instead of a plain ASCII '-' - retype the region manually instead of pasting it."
+    fi
+fi
 
 # Instance Configuration
 # OCI_COMPARTMENT_ID is optional - falls back to tenancy if not specified

@@ -227,21 +227,34 @@ oci_cmd_data() {
     local cmd=("$@")
     local output
     local status
-    
+    local stderr_file
+
     log_debug "Executing OCI data command: oci ${cmd[*]}"
-    
+
+    # Capture stdout and stderr separately: merging them (2>&1) would leak OCI
+    # CLI's informational stderr warnings (e.g. its pagination notice on a
+    # --limit query) into stdout - which callers use verbatim as a --raw-output
+    # value (e.g. an image OCID), silently corrupting it even on success.
+    umask 077
+    stderr_file=$(mktemp)
+
     set +e
-    output=$(oci --no-retry --connection-timeout $OCI_CONNECTION_TIMEOUT_SECONDS --read-timeout $OCI_READ_TIMEOUT_SECONDS "${cmd[@]}" 2>&1)
+    output=$(oci --no-retry --connection-timeout $OCI_CONNECTION_TIMEOUT_SECONDS --read-timeout $OCI_READ_TIMEOUT_SECONDS "${cmd[@]}" 2>"$stderr_file")
     status=$?
     set -e
-    
+
     if [[ $status -ne 0 ]]; then
         log_error "OCI data command failed with status $status"
         log_error "Command: ${cmd[*]}"
         log_error "Output: $output"
+        local stderr_output
+        stderr_output=$(cat "$stderr_file" 2>/dev/null || true)
+        [[ -n "$stderr_output" ]] && log_error "Stderr: $stderr_output"
+        rm -f "$stderr_file"
         return $status
     fi
-    
+
+    rm -f "$stderr_file"
     echo "$output"
 }
 
@@ -274,10 +287,10 @@ redact_sensitive_params() {
         # Check if this is a parameter that might contain sensitive data
         if [[ "$param" == "--auth" || "$param" == "--private-key" || "$param" == "--key-file" ]]; then
             redacted_cmd+=("$param")
-            ((i++))
+            i=$((i + 1))
             if [[ $i -lt ${#cmd[@]} ]]; then
                 redacted_cmd+=("[REDACTED]")
-                ((i++))
+                i=$((i + 1))
             fi
         elif [[ "$param" =~ ^ocid1\. ]]; then
             # Redact OCIDs by showing only first and last 4 characters
@@ -288,24 +301,24 @@ redact_sensitive_params() {
             else
                 redacted_cmd+=("[REDACTED]")
             fi
-            ((i++))
+            i=$((i + 1))
         elif [[ "$param" =~ (BEGIN|END).*PRIVATE.*KEY ]]; then
             # Redact private key content
             redacted_cmd+=("[PRIVATE_KEY_REDACTED]")
-            ((i++))
+            i=$((i + 1))
         elif [[ "$param" =~ .*@.*:.* ]]; then
             # Mask proxy URLs or credentials in the format user:pass@host:port
             local masked_param
             masked_param=$(mask_credentials "$param")
             redacted_cmd+=("$masked_param")
-            ((i++))
+            i=$((i + 1))
         elif [[ "$param" =~ --metadata.*ssh-authorized-keys || "$param" =~ ssh-rsa || "$param" =~ ssh-ed25519 ]]; then
             # Redact SSH keys
             redacted_cmd+=("[SSH_KEY_REDACTED]")
-            ((i++))
+            i=$((i + 1))
         else
             redacted_cmd+=("$param")
-            ((i++))
+            i=$((i + 1))
         fi
     done
     
@@ -597,7 +610,7 @@ retry_with_backoff() {
             delay=$((delay * 2))  # Exponential backoff
         fi
         
-        ((attempt++))
+        attempt=$((attempt + 1))
     done
     
     log_error "Command failed after $max_attempts attempts"
@@ -855,6 +868,18 @@ parse_and_configure_proxy() {
     
     log_debug "Proxy configured for ${proxy_host}:${proxy_port} with authentication (credentials not logged)"
     log_success "Proxy configuration applied successfully"
+}
+
+# Strip leading/trailing whitespace (spaces, tabs, newlines) - defends against
+# stray characters from copy-pasting single-line GitHub Secret values (OCIDs,
+# fingerprints, region names), which otherwise surface as confusing downstream
+# errors (invalid OCID format, "Invalid endpoint host", etc.) instead of a
+# clear "this secret has extra whitespace" message.
+trim_whitespace() {
+    local var="$1"
+    var="${var#"${var%%[![:space:]]*}"}"
+    var="${var%"${var##*[![:space:]]}"}"
+    printf '%s' "$var"
 }
 
 # Validate OCID format

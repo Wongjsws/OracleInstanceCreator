@@ -85,8 +85,12 @@ determine_compartment() {
 
 lookup_image_id() {
     local comp_id="$1"
-    local image_id
-    
+    # Must be initialized: a bare `local image_id` can be left truly unset
+    # (not "") under set -u if no later branch assigns it - e.g. when the
+    # cache_key case below matches nothing, as it does for any OS other than
+    # the hardcoded "Oracle Linux 10" cache entries.
+    local image_id=""
+
     # Set defaults for OS configuration if not provided
     local operating_system="${OPERATING_SYSTEM:-Oracle Linux}"
     local os_version="${OS_VERSION:-10}"
@@ -175,7 +179,7 @@ build_launch_command() {
         "--availability-domain" "$ad_name"
         "--compartment-id" "$comp_id"
         "--shape" "$OCI_SHAPE"
-        "--subnet-id" "$OCI_SUBNET_ID"
+        "--subnet-id" "$(trim_whitespace "$OCI_SUBNET_ID")"
         "--image-id" "$image_id"
         "--display-name" "$INSTANCE_DISPLAY_NAME"
         "--assign-private-dns-record" "true"
@@ -403,7 +407,7 @@ launch_instance() {
                 # Try next AD if available
                 if [[ $((ad_index + 1)) -lt $max_attempts ]]; then
                     log_info "Trying next availability domain..."
-                    ((ad_index++))
+                    ad_index=$((ad_index + 1))
                     continue
                 else
                     log_performance_metric "AD_CYCLE_COMPLETE" "ALL_ADS" "$max_attempts" "$max_attempts" "CAPACITY_EXHAUSTED"
@@ -436,7 +440,7 @@ launch_instance() {
                 # Try next AD if available
                 if [[ $((ad_index + 1)) -lt $max_attempts ]]; then
                     log_info "Trying next availability domain after LimitExceeded..."
-                    ((ad_index++))
+                    ad_index=$((ad_index + 1))
                     continue
                 else
                     log_info "All ADs exhausted after LimitExceeded errors"
@@ -449,7 +453,7 @@ launch_instance() {
                 local should_retry_same_ad=true
                 
                 while [[ $should_retry_same_ad == true && $retry_count -lt $transient_retry_max ]]; do
-                    ((retry_count++))
+                    retry_count=$((retry_count + 1))
                     
                     # Calculate exponential backoff delay for this attempt
                     local backoff_delay
@@ -526,7 +530,7 @@ launch_instance() {
                 if [[ "$error_type" == "INTERNAL_ERROR" || "$error_type" == "NETWORK" ]]; then
                     if [[ $((ad_index + 1)) -lt $max_attempts ]]; then
                         log_info "All retries exhausted for $current_ad - trying next availability domain..."
-                        ((ad_index++))
+                        ad_index=$((ad_index + 1))
                         continue
                     else
                         # All ADs attempted with transient errors - treat as temporary capacity issue
@@ -539,7 +543,7 @@ launch_instance() {
                         "CAPACITY")
                             if [[ $((ad_index + 1)) -lt $max_attempts ]]; then
                                 log_info "Trying next availability domain after capacity error during retry..."
-                                ((ad_index++))
+                                ad_index=$((ad_index + 1))
                                 continue
                             else
                                 log_info "All ADs exhausted - will retry on next schedule"
@@ -587,7 +591,7 @@ launch_instance() {
             fi
         fi
         
-        ((ad_index++))
+        ad_index=$((ad_index + 1))
     done
     
     # Should not reach here, but handle gracefully

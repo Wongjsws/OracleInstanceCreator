@@ -110,7 +110,7 @@ acquire_state_lock() {
         
         log_debug "Waiting for state lock... ($((wait_count + 1))/$timeout)"
         sleep 1
-        ((wait_count++))
+        wait_count=$((wait_count + 1))
     done
     
     log_error "Failed to acquire state lock after ${timeout}s: $lock_file"

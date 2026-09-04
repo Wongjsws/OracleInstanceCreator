@@ -130,7 +130,7 @@ count_actual_instances() {
         --lifecycle-state "RUNNING,PROVISIONING,STARTING" \
         --query 'data[0].id' \
         --raw-output 2>&1) && [[ -n "$a1_instance_id" && "$a1_instance_id" != "null" ]]; then
-        ((actual_count++))
+        actual_count=$((actual_count + 1))
     else
         # Log API failures for debugging while maintaining graceful degradation
         if [[ -n "$a1_instance_id" && "$a1_instance_id" =~ (ERROR|ServiceError|Authentication) ]]; then
@@ -146,7 +146,7 @@ count_actual_instances() {
         --lifecycle-state "RUNNING,PROVISIONING,STARTING" \
         --query 'data[0].id' \
         --raw-output 2>&1) && [[ -n "$e2_instance_id" && "$e2_instance_id" != "null" ]]; then
-        ((actual_count++))
+        actual_count=$((actual_count + 1))
     else
         # Log API failures for debugging while maintaining graceful degradation
         if [[ -n "$e2_instance_id" && "$e2_instance_id" =~ (ERROR|ServiceError|Authentication) ]]; then
@@ -230,15 +230,15 @@ verify_and_update_state() {
                 log_info "Verified A1.Flex instance exists: $a1_instance_id"
                 if ! record_instance_verification "${A1_FLEX_CONFIG[DISPLAY_NAME]}" "$a1_instance_id" "verified" "$state_file"; then
                     log_warning "Failed to record A1.Flex instance verification"
-                    ((verification_errors++))
+                    verification_errors=$((verification_errors + 1))
                 fi
             else
                 log_warning "A1.Flex instance creation reported success but instance not found via API"
-                ((verification_errors++))
+                verification_errors=$((verification_errors + 1))
             fi
         else
             log_error "Failed to query A1.Flex instance state via OCI API"
-            ((verification_errors++))
+            verification_errors=$((verification_errors + 1))
         fi
     fi
     
@@ -257,15 +257,15 @@ verify_and_update_state() {
                 log_info "Verified E2.Micro instance exists: $e2_instance_id"
                 if ! record_instance_verification "${E2_MICRO_CONFIG[DISPLAY_NAME]}" "$e2_instance_id" "verified" "$state_file"; then
                     log_warning "Failed to record E2.Micro instance verification"
-                    ((verification_errors++))
+                    verification_errors=$((verification_errors + 1))
                 fi
             else
                 log_warning "E2.Micro instance creation reported success but instance not found via API"
-                ((verification_errors++))
+                verification_errors=$((verification_errors + 1))
             fi
         else
             log_error "Failed to query E2.Micro instance state via OCI API"
-            ((verification_errors++))
+            verification_errors=$((verification_errors + 1))
         fi
     fi
     
@@ -360,7 +360,20 @@ main() {
     local state_file="instance-state.json"
     local should_launch_a1=true
     local should_launch_e2=true
-    
+
+    # Some regions don't offer every free-tier shape (e.g. E2.1.Micro is not
+    # available in ap-kulai-2 at all, confirmed via the console shape picker).
+    # Attempting it there returns a permanent NotAuthorizedOrNotFound 404,
+    # classified as a genuine AUTH failure (not silent like capacity/limits),
+    # which would trigger a failure notification on every single scheduled
+    # run forever. ENABLE_E2_MICRO=false skips it cleanly via the same
+    # cached-limit skip path used below, so it's treated as expected/silent.
+    if [[ "${ENABLE_E2_MICRO:-true}" == "false" ]]; then
+        should_launch_e2=false
+        log_info "E2.1.Micro: Disabled for this region (ENABLE_E2_MICRO=false) - skipping creation attempt"
+        echo "$OCI_EXIT_USER_LIMIT_ERROR" >"$e2_result"
+    fi
+
     # Initialize state manager to ensure state file exists
     if ! init_state_manager "$state_file" >/dev/null; then
         log_warning "Failed to initialize state manager, proceeding with all shapes"
