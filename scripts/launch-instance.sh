@@ -85,8 +85,12 @@ determine_compartment() {
 
 lookup_image_id() {
     local comp_id="$1"
-    local image_id
-    
+    # Must be initialized: a bare `local image_id` can be left truly unset
+    # (not "") under set -u if no later branch assigns it - e.g. when the
+    # cache_key case below matches nothing, as it does for any OS other than
+    # the hardcoded "Oracle Linux 10" cache entries.
+    local image_id=""
+
     # Set defaults for OS configuration if not provided
     local operating_system="${OPERATING_SYSTEM:-Oracle Linux}"
     local os_version="${OS_VERSION:-10}"
