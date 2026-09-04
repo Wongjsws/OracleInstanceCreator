@@ -2,7 +2,7 @@
 
 # Parallel OCI instance launcher script
 # Attempts to create both free tier shapes simultaneously:
-# - VM.Standard.A1.Flex (ARM): 4 OCPUs, 24GB RAM
+# - VM.Standard.A1.Flex (ARM): 2 OCPUs, 12GB RAM
 # - VM.Standard.E2.1.Micro (AMD): 1 OCPU, 1GB RAM
 #
 # TELEGRAM NOTIFICATION RULES:
@@ -99,8 +99,8 @@ trap cleanup_handler SIGTERM SIGINT
 # shellcheck disable=SC2034  # Used via nameref in launch_shape()
 declare -A A1_FLEX_CONFIG=(
     ["SHAPE"]="VM.Standard.A1.Flex"
-    ["OCPUS"]="4"
-    ["MEMORY_IN_GBS"]="24"
+    ["OCPUS"]="2"
+    ["MEMORY_IN_GBS"]="12"
     ["DISPLAY_NAME"]="a1-flex-sg"
 )
 

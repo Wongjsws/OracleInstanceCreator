@@ -52,8 +52,9 @@ wait  # 55s timeout protection
 
 ### Shape Configurations
 ```bash
-# A1.Flex (ARM) - 4 OCPUs, 24GB, instance name: a1-flex-sg
+# A1.Flex (ARM) - 2 OCPUs, 12GB, instance name: a1-flex-sg
 # E2.1.Micro (AMD) - 1 OCPU, 1GB, instance name: e2-micro-sg
+# OS: Canonical Ubuntu 24.04 (OPERATING_SYSTEM/OS_VERSION env vars, applies to both shapes)
 ```
 
 ## Development Commands

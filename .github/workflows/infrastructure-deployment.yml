@@ -5,27 +5,29 @@ permissions:
 name: 'OCI Orchestrator - Infrastructure Deployment'
 
 on:
-  # schedule:
+  schedule:
     # Four-tier optimization: 10-min off-peak weekdays, 15-min peak weekdays, 10-min all weekend (~4,320 runs/month)
-    # All schedules target Oracle Cloud optimal availability windows for maximum deployment success
+    # All schedules target Oracle Cloud optimal availability windows for maximum deployment success.
+    # Repo is public, so GitHub Actions minutes are unlimited/free at this cadence.
+    # Times below reference SGT but apply equally to MYT (Malaysia), both UTC+8.
 
     # TIER 1: Off-peak aggressive (10-min intervals) - Weekdays only
-    # UTC 2-7am = SGT 10am-3pm (lunch/afternoon lull)
+    # UTC 2-7am = SGT/MYT 10am-3pm (lunch/afternoon lull)
     # UTC 2-7am = EST 9pm-2am (late evening/night)
     # UTC 2-7am = CET 3-8am (early morning)
-    # - cron: "*/10 2-7 * * 1-5"
+    - cron: "*/10 2-7 * * 1-5"
 
     # TIER 2: Late night/early morning (10-min intervals) - Weekdays only
-    # UTC 20-23 = SGT 4am-7am (early morning low usage, avoids overlap with TIER 1)
-    # - cron: "*/10 20-23 * * 1-5"
+    # UTC 20-23 = SGT/MYT 4am-7am (early morning low usage, avoids overlap with TIER 1)
+    - cron: "*/10 20-23 * * 1-5"
 
     # TIER 3: Peak hours conservative (15-min intervals) - Weekdays only
-    # UTC 8-19 = SGT 4pm-3am (business end + evening peak)
-    # - cron: "*/15 8-19 * * 1-5"
+    # UTC 8-19 = SGT/MYT 4pm-3am (business end + evening peak)
+    - cron: "*/15 8-19 * * 1-5"
 
     # TIER 4: Weekend boost (10-min intervals all day)
     # Saturdays and Sundays - lower weekend cloud usage, no overlap with weekday tiers
-    # - cron: "*/10 * * * 6,0"
+    - cron: "*/10 * * * 6,0"
 
   # Disabled to avoid triggering 429 on OCI API; also failures confuse claude when trying to fix PR checks
   # pull_request:
@@ -90,15 +92,16 @@ jobs:
     env:
       # Common configuration for both shapes
       # Multi-AD support: Use comma-separated list for multiple ADs
-      # Example: "fgaj:AP-SINGAPORE-1-AD-1,fgaj:AP-SINGAPORE-1-AD-2,fgaj:AP-SINGAPORE-1-AD-3"
-      OCI_AD: "fgaj:AP-SINGAPORE-1-AD-1"
+      # ap-kulai-2 (Malaysia West 2) has only a single AD, so there is nothing to cycle to here -
+      # capacity retries rely entirely on the scheduled re-runs of this workflow over time.
+      OCI_AD: "qqNl:AP-KULAI-2-AD-1"
       OCI_SHAPE: "VM.Standard.A1.Flex"  # Default shape for validation (overridden per-shape)
-      OCI_OCPUS: "4"  # Default for A1.Flex validation (overridden per-shape)
-      OCI_MEMORY_IN_GBS: "24"  # Default for A1.Flex validation (overridden per-shape)
+      OCI_OCPUS: "2"  # Default for A1.Flex validation (overridden per-shape)
+      OCI_MEMORY_IN_GBS: "12"  # Default for A1.Flex validation (overridden per-shape)
       INSTANCE_DISPLAY_NAME: "default-instance"  # Default for validation (overridden per-shape)
       ASSIGN_PUBLIC_IP: "false"
-      OPERATING_SYSTEM: "Oracle Linux"
-      OS_VERSION: "10"
+      OPERATING_SYSTEM: "Canonical Ubuntu"
+      OS_VERSION: "24.04"
       # Boot volume configuration
       BOOT_VOLUME_SIZE: "50"
       # Instance recovery and compatibility settings
@@ -114,13 +117,14 @@ jobs:
       INSTANCE_VERIFY_DELAY: "30"
       # Logging configuration (set to 'json' for structured logging)
       LOG_FORMAT: "text"
-      # Cached image IDs for supported instance shapes (update periodically)
-      OCI_CACHED_OL10_ARM_IMAGE: "ocid1.image.oc1.ap-singapore-1.aaaaaaaay4vc5rcekxthq7cillis3qred5xyz7kmqd6wuaoknk4zukohqlua"
-      OCI_CACHED_OL10_AMD_IMAGE: "ocid1.image.oc1.ap-singapore-1.aaaaaaaaitll52n3sr73g2gaclby2ph5whrmb5l3tbo47i6atle6z3cemr6a"
+      # No cached image ID set: OPERATING_SYSTEM/OS_VERSION above (Canonical Ubuntu 24.04) don't match
+      # any cache_key in lookup_image_id(), so it falls back to a live OCI image-list API call each run.
+      # (The previous cached values were Oracle Linux 10 image OCIDs scoped to ap-singapore-1, which
+      # are wrong for both this OS and this tenancy's ap-kulai-2 region, so they were removed.)
       # Adaptive scheduling configuration
       ENABLE_ADAPTIVE_SCHEDULING: ${{ inputs.adaptive_scheduling && 'true' || 'true' }}
       ENABLE_REGION_OPTIMIZATION: ${{ inputs.region_optimization && 'true' || 'true' }}
-      ORACLE_REGION_TIMEZONE: "Asia/Singapore"
+      ORACLE_REGION_TIMEZONE: "Asia/Kuala_Lumpur"  # ap-kulai-2; same UTC+8 offset as Asia/Singapore, no DST
       SUCCESS_TRACKING_ENABLED: "true"
     steps:
       - name: Checkout repository

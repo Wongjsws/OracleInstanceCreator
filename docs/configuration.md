@@ -69,12 +69,12 @@ These can be set in the GitHub Actions workflow file:
 |----------|-------------|---------|
 | `OCI_AD` | Availability domain | `fgaj:AP-SINGAPORE-1-AD-1` |
 | `OCI_SHAPE` | Instance shape | `VM.Standard.A1.Flex` |
-| `OCI_OCPUS` | Number of OCPUs (flexible shapes) | `4` |
-| `OCI_MEMORY_IN_GBS` | Memory in GB (flexible shapes) | `24` |
+| `OCI_OCPUS` | Number of OCPUs (flexible shapes) | `2` |
+| `OCI_MEMORY_IN_GBS` | Memory in GB (flexible shapes) | `12` |
 | `INSTANCE_DISPLAY_NAME` | Instance display name | `a1-sg` |
 | `ASSIGN_PUBLIC_IP` | Assign public IP | `false` |
-| `OPERATING_SYSTEM` | Operating system | `Oracle Linux` |
-| `OS_VERSION` | OS version | `10` |
+| `OPERATING_SYSTEM` | Operating system | `Canonical Ubuntu` |
+| `OS_VERSION` | OS version | `24.04` |
 
 ## Using Instance Profiles
 
