@@ -90,8 +90,9 @@ jobs:
     env:
       # Common configuration for both shapes
       # Multi-AD support: Use comma-separated list for multiple ADs
-      # Example: "fgaj:AP-SINGAPORE-1-AD-1,fgaj:AP-SINGAPORE-1-AD-2,fgaj:AP-SINGAPORE-1-AD-3"
-      OCI_AD: "fgaj:AP-SINGAPORE-1-AD-1"
+      # ap-kulai-2 (Malaysia West 2) has only a single AD, so there is nothing to cycle to here -
+      # capacity retries rely entirely on the scheduled re-runs of this workflow over time.
+      OCI_AD: "qqNl:AP-KULAI-2-AD-1"
       OCI_SHAPE: "VM.Standard.A1.Flex"  # Default shape for validation (overridden per-shape)
       OCI_OCPUS: "2"  # Default for A1.Flex validation (overridden per-shape)
       OCI_MEMORY_IN_GBS: "12"  # Default for A1.Flex validation (overridden per-shape)
@@ -114,10 +115,10 @@ jobs:
       INSTANCE_VERIFY_DELAY: "30"
       # Logging configuration (set to 'json' for structured logging)
       LOG_FORMAT: "text"
-      # Cached Oracle Linux 10 image IDs (unused while OPERATING_SYSTEM=Canonical Ubuntu above;
-      # lookup_image_id() falls back to an OCI API image search for Ubuntu, kept here for quick rollback)
-      OCI_CACHED_OL10_ARM_IMAGE: "ocid1.image.oc1.ap-singapore-1.aaaaaaaay4vc5rcekxthq7cillis3qred5xyz7kmqd6wuaoknk4zukohqlua"
-      OCI_CACHED_OL10_AMD_IMAGE: "ocid1.image.oc1.ap-singapore-1.aaaaaaaaitll52n3sr73g2gaclby2ph5whrmb5l3tbo47i6atle6z3cemr6a"
+      # No cached image ID set: OPERATING_SYSTEM/OS_VERSION above (Canonical Ubuntu 24.04) don't match
+      # any cache_key in lookup_image_id(), so it falls back to a live OCI image-list API call each run.
+      # (The previous cached values were Oracle Linux 10 image OCIDs scoped to ap-singapore-1, which
+      # are wrong for both this OS and this tenancy's ap-kulai-2 region, so they were removed.)
       # Adaptive scheduling configuration
       ENABLE_ADAPTIVE_SCHEDULING: ${{ inputs.adaptive_scheduling && 'true' || 'true' }}
       ENABLE_REGION_OPTIMIZATION: ${{ inputs.region_optimization && 'true' || 'true' }}

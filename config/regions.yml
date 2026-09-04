@@ -34,6 +34,12 @@ regions:
       - "nfYH:AP-SEOUL-1-AD-1"
     free_tier_available: true
 
+  ap-kulai-2:
+    name: "Malaysia West 2 (Kulai)"
+    availability_domains:
+      - "qqNl:AP-KULAI-2-AD-1"
+    free_tier_available: true
+
   # Europe regions
   eu-frankfurt-1:
     name: "Europe (Frankfurt)"
