@@ -360,7 +360,20 @@ main() {
     local state_file="instance-state.json"
     local should_launch_a1=true
     local should_launch_e2=true
-    
+
+    # Some regions don't offer every free-tier shape (e.g. E2.1.Micro is not
+    # available in ap-kulai-2 at all, confirmed via the console shape picker).
+    # Attempting it there returns a permanent NotAuthorizedOrNotFound 404,
+    # classified as a genuine AUTH failure (not silent like capacity/limits),
+    # which would trigger a failure notification on every single scheduled
+    # run forever. ENABLE_E2_MICRO=false skips it cleanly via the same
+    # cached-limit skip path used below, so it's treated as expected/silent.
+    if [[ "${ENABLE_E2_MICRO:-true}" == "false" ]]; then
+        should_launch_e2=false
+        log_info "E2.1.Micro: Disabled for this region (ENABLE_E2_MICRO=false) - skipping creation attempt"
+        echo "$OCI_EXIT_USER_LIMIT_ERROR" >"$e2_result"
+    fi
+
     # Initialize state manager to ensure state file exists
     if ! init_state_manager "$state_file" >/dev/null; then
         log_warning "Failed to initialize state manager, proceeding with all shapes"

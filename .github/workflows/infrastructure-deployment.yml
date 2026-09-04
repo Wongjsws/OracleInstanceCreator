@@ -102,6 +102,12 @@ jobs:
       ASSIGN_PUBLIC_IP: "false"
       OPERATING_SYSTEM: "Canonical Ubuntu"
       OS_VERSION: "24.04"
+      # VM.Standard.E2.1.Micro is not offered in ap-kulai-2 (confirmed via the
+      # console's Change Shape picker) - every attempt there returns a
+      # permanent NotAuthorizedOrNotFound 404, which is a genuine AUTH-class
+      # failure (not silent like capacity/limits) and would alert on every
+      # scheduled run forever. Disabled so only A1.Flex is hunted here.
+      ENABLE_E2_MICRO: "false"
       # Boot volume configuration
       BOOT_VOLUME_SIZE: "50"
       # Instance recovery and compatibility settings
