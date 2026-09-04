@@ -56,7 +56,7 @@ Automated provisioning of Oracle Cloud free-tier instances (A1.Flex ARM & E2.1.M
 The system executes both instance types in parallel for maximum efficiency:
 
 **A1.Flex (ARM Architecture)**
-- 4 OCPUs, 24GB RAM
+- 2 OCPUs, 12GB RAM
 - Instance name: `a1-flex-sg`
 - Better availability than AMD
 
@@ -64,6 +64,8 @@ The system executes both instance types in parallel for maximum efficiency:
 - 1 OCPU, 1GB RAM
 - Instance name: `e2-micro-sg`
 - Traditional x86 architecture
+
+Both shapes provision **Canonical Ubuntu 24.04**.
 
 Each shape independently cycles through configured availability domains until successful or capacity unavailable. The parallel approach maximizes your chances of securing at least one free-tier instance.
 

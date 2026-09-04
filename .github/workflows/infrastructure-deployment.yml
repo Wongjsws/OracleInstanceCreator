@@ -93,12 +93,12 @@ jobs:
       # Example: "fgaj:AP-SINGAPORE-1-AD-1,fgaj:AP-SINGAPORE-1-AD-2,fgaj:AP-SINGAPORE-1-AD-3"
       OCI_AD: "fgaj:AP-SINGAPORE-1-AD-1"
       OCI_SHAPE: "VM.Standard.A1.Flex"  # Default shape for validation (overridden per-shape)
-      OCI_OCPUS: "4"  # Default for A1.Flex validation (overridden per-shape)
-      OCI_MEMORY_IN_GBS: "24"  # Default for A1.Flex validation (overridden per-shape)
+      OCI_OCPUS: "2"  # Default for A1.Flex validation (overridden per-shape)
+      OCI_MEMORY_IN_GBS: "12"  # Default for A1.Flex validation (overridden per-shape)
       INSTANCE_DISPLAY_NAME: "default-instance"  # Default for validation (overridden per-shape)
       ASSIGN_PUBLIC_IP: "false"
-      OPERATING_SYSTEM: "Oracle Linux"
-      OS_VERSION: "10"
+      OPERATING_SYSTEM: "Canonical Ubuntu"
+      OS_VERSION: "24.04"
       # Boot volume configuration
       BOOT_VOLUME_SIZE: "50"
       # Instance recovery and compatibility settings
@@ -114,7 +114,8 @@ jobs:
       INSTANCE_VERIFY_DELAY: "30"
       # Logging configuration (set to 'json' for structured logging)
       LOG_FORMAT: "text"
-      # Cached image IDs for supported instance shapes (update periodically)
+      # Cached Oracle Linux 10 image IDs (unused while OPERATING_SYSTEM=Canonical Ubuntu above;
+      # lookup_image_id() falls back to an OCI API image search for Ubuntu, kept here for quick rollback)
       OCI_CACHED_OL10_ARM_IMAGE: "ocid1.image.oc1.ap-singapore-1.aaaaaaaay4vc5rcekxthq7cillis3qred5xyz7kmqd6wuaoknk4zukohqlua"
       OCI_CACHED_OL10_AMD_IMAGE: "ocid1.image.oc1.ap-singapore-1.aaaaaaaaitll52n3sr73g2gaclby2ph5whrmb5l3tbo47i6atle6z3cemr6a"
       # Adaptive scheduling configuration
