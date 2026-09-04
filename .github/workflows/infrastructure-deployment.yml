@@ -5,27 +5,29 @@ permissions:
 name: 'OCI Orchestrator - Infrastructure Deployment'
 
 on:
-  # schedule:
+  schedule:
     # Four-tier optimization: 10-min off-peak weekdays, 15-min peak weekdays, 10-min all weekend (~4,320 runs/month)
-    # All schedules target Oracle Cloud optimal availability windows for maximum deployment success
+    # All schedules target Oracle Cloud optimal availability windows for maximum deployment success.
+    # Repo is public, so GitHub Actions minutes are unlimited/free at this cadence.
+    # Times below reference SGT but apply equally to MYT (Malaysia), both UTC+8.
 
     # TIER 1: Off-peak aggressive (10-min intervals) - Weekdays only
-    # UTC 2-7am = SGT 10am-3pm (lunch/afternoon lull)
+    # UTC 2-7am = SGT/MYT 10am-3pm (lunch/afternoon lull)
     # UTC 2-7am = EST 9pm-2am (late evening/night)
     # UTC 2-7am = CET 3-8am (early morning)
-    # - cron: "*/10 2-7 * * 1-5"
+    - cron: "*/10 2-7 * * 1-5"
 
     # TIER 2: Late night/early morning (10-min intervals) - Weekdays only
-    # UTC 20-23 = SGT 4am-7am (early morning low usage, avoids overlap with TIER 1)
-    # - cron: "*/10 20-23 * * 1-5"
+    # UTC 20-23 = SGT/MYT 4am-7am (early morning low usage, avoids overlap with TIER 1)
+    - cron: "*/10 20-23 * * 1-5"
 
     # TIER 3: Peak hours conservative (15-min intervals) - Weekdays only
-    # UTC 8-19 = SGT 4pm-3am (business end + evening peak)
-    # - cron: "*/15 8-19 * * 1-5"
+    # UTC 8-19 = SGT/MYT 4pm-3am (business end + evening peak)
+    - cron: "*/15 8-19 * * 1-5"
 
     # TIER 4: Weekend boost (10-min intervals all day)
     # Saturdays and Sundays - lower weekend cloud usage, no overlap with weekday tiers
-    # - cron: "*/10 * * * 6,0"
+    - cron: "*/10 * * * 6,0"
 
   # Disabled to avoid triggering 429 on OCI API; also failures confuse claude when trying to fix PR checks
   # pull_request:
@@ -122,7 +124,7 @@ jobs:
       # Adaptive scheduling configuration
       ENABLE_ADAPTIVE_SCHEDULING: ${{ inputs.adaptive_scheduling && 'true' || 'true' }}
       ENABLE_REGION_OPTIMIZATION: ${{ inputs.region_optimization && 'true' || 'true' }}
-      ORACLE_REGION_TIMEZONE: "Asia/Singapore"
+      ORACLE_REGION_TIMEZONE: "Asia/Kuala_Lumpur"  # ap-kulai-2; same UTC+8 offset as Asia/Singapore, no DST
       SUCCESS_TRACKING_ENABLED: "true"
     steps:
       - name: Checkout repository
