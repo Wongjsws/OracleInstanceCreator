@@ -84,9 +84,10 @@ check_required_var "OCI_PRIVATE_KEY" "OCI Private Key"
 check_required_var "OCI_SUBNET_ID" "OCI Subnet ID"
 check_required_var "INSTANCE_SSH_PUBLIC_KEY" "SSH Public Key"
 
-# Telegram Configuration
-check_required_var "TELEGRAM_TOKEN" "Telegram Bot Token"
-check_required_var "TELEGRAM_USER_ID" "Telegram User ID"
+# Telegram Configuration is optional - notify.sh already skips notifications
+# gracefully when unset, and section 5 below validates it when present.
+# Hard-requiring it here would block instance creation over a notification
+# channel, which the rest of the codebase treats as non-essential.
 
 echo ""
 log_info "2. Validating OCID formats..."
