@@ -63,6 +63,10 @@ on:
         description: 'Use region-specific timing optimization'
         type: boolean
         default: true
+      send_test_notification:
+        description: 'Send a real Telegram test message during preflight (for verifying TELEGRAM_TOKEN/TELEGRAM_USER_ID)'
+        type: boolean
+        default: false
 
 # Prevent multiple workflow runs from overlapping to avoid billing spikes
 concurrency:
@@ -231,6 +235,7 @@ jobs:
           INSTANCE_SSH_PUBLIC_KEY: ${{ secrets.INSTANCE_SSH_PUBLIC_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_USER_ID: ${{ secrets.TELEGRAM_USER_ID }}
+          PREFLIGHT_SEND_TEST_NOTIFICATION: ${{ github.event_name == 'workflow_dispatch' && (inputs.send_test_notification && 'true' || 'false') || 'false' }}
         run: ./scripts/preflight-check.sh
 
       - name: Setup OCI and SSH configuration (parallel)
