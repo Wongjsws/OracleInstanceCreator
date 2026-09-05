@@ -57,6 +57,13 @@ send_telegram_notification() {
         log_warning "Telegram credentials not configured, skipping notification"
         return 0
     fi
+
+    # Trim stray whitespace/newlines - a bad HTTP path segment (token) or form
+    # value (chat ID) from copy-pasting fails identically to a genuinely wrong
+    # value, so this is worth ruling out unconditionally.
+    local telegram_token telegram_user_id
+    telegram_token=$(trim_whitespace "$TELEGRAM_TOKEN")
+    telegram_user_id=$(trim_whitespace "$TELEGRAM_USER_ID")
     
     # Add emoji and formatting based on notification type
     local formatted_message
@@ -96,8 +103,8 @@ send_telegram_notification() {
     local status
     
     set +e
-    response=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-        -d "chat_id=${TELEGRAM_USER_ID}" \
+    response=$(curl -s -X POST "https://api.telegram.org/bot${telegram_token}/sendMessage" \
+        -d "chat_id=${telegram_user_id}" \
         -d "parse_mode=Markdown" \
         --data-urlencode "text=${formatted_message}" \
         --connect-timeout 10 \
