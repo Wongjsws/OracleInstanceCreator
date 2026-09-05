@@ -21,7 +21,15 @@ else
     log_info() { echo "[INFO] $*" >&2; }
     log_warning() { echo "[WARNING] $*" >&2; }
     log_error() { echo "[ERROR] $*" >&2; }
-    
+
+    trim_whitespace() {
+        local var="$1"
+        var="${var#"${var%%[![:space:]]*}"}"
+        var="${var%"${var##*[![:space:]]}"}"
+        printf '%s' "$var"
+    }
+
+
     # Simple retry implementation as fallback
     retry_with_backoff() {
         local max_attempts="$1"
