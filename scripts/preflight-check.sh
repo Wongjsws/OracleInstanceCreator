@@ -214,6 +214,12 @@ echo ""
 if [[ -n "${TELEGRAM_TOKEN:-}" && -n "${TELEGRAM_USER_ID:-}" ]]; then
     validation_success "Telegram credentials configured"
 
+    # Trim stray whitespace/newlines - a token/chat ID with extra characters
+    # from copy-pasting is a bad HTTP path segment or form value, and Telegram
+    # reports that identically to a genuinely wrong value (401 Unauthorized).
+    telegram_token=$(trim_whitespace "$TELEGRAM_TOKEN")
+    telegram_user_id=$(trim_whitespace "$TELEGRAM_USER_ID")
+
     # Test Telegram API connectivity silently (no actual notification sent)
     # Use getMe API endpoint for silent connectivity validation.
     # NOTE: curl's own exit code only reflects transport-level success (the
@@ -221,7 +227,7 @@ if [[ -n "${TELEGRAM_TOKEN:-}" && -n "${TELEGRAM_USER_ID:-}" ]]; then
     # body like {"ok":false,"error_code":401,...} for a bad token, which curl
     # treats as success by default. Must check the actual "ok" field, or a
     # broken token/chat ID silently reports as working.
-    telegram_getme_response=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/getMe" \
+    telegram_getme_response=$(curl -s -X POST "https://api.telegram.org/bot${telegram_token}/getMe" \
         --connect-timeout 10 --max-time 15)
     if echo "$telegram_getme_response" | grep -q '"ok":true'; then
         validation_success "Telegram API connectivity verified"
@@ -229,8 +235,8 @@ if [[ -n "${TELEGRAM_TOKEN:-}" && -n "${TELEGRAM_USER_ID:-}" ]]; then
         # Only send test notification if explicitly requested via environment variable
         if [[ "${PREFLIGHT_SEND_TEST_NOTIFICATION:-false}" == "true" ]]; then
             test_message="🔧 Oracle Instance Creator preflight check completed at $(date)"
-            telegram_send_response=$(curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-                -d "chat_id=${TELEGRAM_USER_ID}" \
+            telegram_send_response=$(curl -s -X POST "https://api.telegram.org/bot${telegram_token}/sendMessage" \
+                -d "chat_id=${telegram_user_id}" \
                 -d "text=${test_message}" \
                 -d "parse_mode=Markdown")
             if echo "$telegram_send_response" | grep -q '"ok":true'; then
